@@ -137,68 +137,29 @@ specify posix.unistd:
       expect(getgid()).to_be(ids.pw_gid)
 
 
-
-- describe initgroups:
-  - before:
-      initgroups = M.initgroups
-
-  - context with bad arguments:
-      badargs.diagnose(initgroups, "(string, number)", "nobody", 65534)
-
-  - it returns a boolean on success:
-      local ok, err, errno = initgroups('nobody', 65534)
-      expect(ok).to_be(true)
-      expect(err).to_be(nil)
-      expect(errno).to_be(nil)
-
-  - it fails with invalid user:
-      local ok, err, errno = initgroups('invalid_user_123', 65534)
-      expect(ok).to_be(nil)
-      expect(type(err)).to_be('string')
-      expect(type(errno)).to_be('number')
-
-
-
 - describe getgrouplist:
   - before:
       getgrouplist = M.getgrouplist
 
   - context with bad arguments:
-      badargs.diagnose(getgrouplist, "(string, number)", "nobody", 65534)
+      if getgrouplist then
+        badargs.diagnose(getgrouplist, "(string, number)", "nobody", 65534)
+      end
 
   - it returns a table of group IDs:
-      local gids = getgrouplist('nobody', 65534)
-      expect(type(gids)).to_be('table')
-      expect(#gids >= 1).to_be(true)
+      if getgrouplist then
+        local gids = getgrouplist('nobody', 65534)
+        expect(type(gids)).to_be('table')
+        expect(#gids >= 1).to_be(true)
+      end
 
   - it fails with invalid user:
-      local gids, err, errno = getgrouplist('invalid_user_123', 65534)
-      expect(gids).to_be(nil)
-      expect(type(err)).to_be('string')
-      expect(type(errno)).to_be('number')
-
-
-
-- describe setgroups:
-  - before:
-      setgroups = M.setgroups
-      getgrouplist = M.getgrouplist
-
-  - context with bad arguments:
-      badargs.diagnose(setgroups, "(table)", {65534})
-
-  - it returns a boolean on success:
-      local gids = getgrouplist('nobody', 65534)
-      local ok, err, errno = setgroups(gids)
-      expect(ok).to_be(true)
-      expect(err).to_be(nil)
-      expect(errno).to_be(nil)
-
-  - it fails with invalid group list:
-      local ok, err, errno = setgroups({ 'invalid' })
-      expect(ok).to_be(nil)
-      expect(type(err)).to_be('string')
-
+      if getgrouplist then
+        local gids, err, errno = getgrouplist('invalid_user_123', 65534)
+        expect(gids).to_be(nil)
+        expect(type(err)).to_be('string')
+        expect(type(errno)).to_be('number')
+      end
 
 
 - describe gethostid:
@@ -259,6 +220,32 @@ specify posix.unistd:
       expect(getppid() > 0).to_be(true)
   - it does not return the process id:
       expect(getppid()).not_to_be(M.getpid())
+
+
+- describe initgroups:
+  - before:
+      initgroups = M.initgroups
+
+  - context with bad arguments:
+      if initgroups then
+        badargs.diagnose(initgroups, "(string, number)", "nobody", 65534)
+      end
+
+  - it returns a boolean on success:
+      if initgroups then
+        local ok, err, errno = initgroups('nobody', 65534)
+        expect(ok).to_be(true)
+        expect(err).to_be(nil)
+        expect(errno).to_be(nil)
+      end
+
+  - it fails with invalid user:
+      if initgroups then
+        local ok, err, errno = initgroups('invalid_user_123', 65534)
+        expect(ok).to_be(nil)
+        expect(type(err)).to_be('string')
+        expect(type(errno)).to_be('number')
+      end
 
 
 - describe lchown:
@@ -430,6 +417,33 @@ specify posix.unistd:
       st_mode = (lstat(proclink) or {}).st_mode
       if st_mode and S_ISLNK(st_mode) then
          expect(readlink(proclink)).not_to_be(nil)
+      end
+
+
+- describe setgroups:
+  - before:
+      setgroups = M.setgroups
+      getgrouplist = M.getgrouplist
+
+  - context with bad arguments:
+      if setgroups then
+        badargs.diagnose(setgroups, "(table)", {65534})
+      end
+
+  - it returns a boolean on success:
+      if setgroups and getgrouplist then
+        local gids = getgrouplist('nobody', 65534)
+        local ok, err, errno = setgroups(gids)
+        expect(ok).to_be(true)
+        expect(err).to_be(nil)
+        expect(errno).to_be(nil)
+      end
+
+  - it fails with invalid group list:
+      if setgroups then
+        local ok, err, errno = setgroups({ 'invalid' })
+        expect(ok).to_be(nil)
+        expect(type(err)).to_be('string')
       end
 
 
